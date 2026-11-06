@@ -34,6 +34,47 @@ description: "看图定位 / 照片找地点 / 网络迷踪 / 图寻 / geolocati
 
 > 内部子技能的历史 id 仍是 `wlmz-*`（YAML `name:`），**故意不改**：`INDEX.md`、各领域 `SKILL.md`、`docs/` 里有大量交叉引用，改名会断链。对使用者只需记 `geolens` 这一个入口名。
 
+## 📌 原典（必读，保证与上游功能 100% 等价）
+
+原 `wlmz` 总技能**全文**存档在 `docs/_original/original-wlmz-SKILL.md`（16 KB）。本入口是流程精简版；**首次判读、以及报 L2+ 结论之前，必须同时读原典**。下列未内联的内容以原典为准：
+
+- 「输入 / 输出」规格表
+- 「测试题执行路径（dim8）」及 3 个 golden 样例 P1/P2/P3（dim8 验收门禁）
+- 各步骤的「触发 / 一线修复 / 仍失败兜底」表
+- 「资源（必达）」完整表（ShadowFinder、全球时空日历、phone-attribution 查询法、铁路时刻与车站坐标等）
+
+高频两张表内联如下。
+
+### L0–L4 ↔ geo-sleuth 分档（核验层内部档，出货只用左列）
+
+| wlmz L0–L4 | geo-sleuth 内部档 | 判定等价条件 |
+|---|---|---|
+| L0 无法判断 | 无解 | 无线索或互斥 |
+| L1 大洲/国倾向 | 城市 低 | 单条弱线索 / 只靠提示 |
+| L2 国/省倾向 | 城市 中 | ≥2 独立弱线索一致 |
+| L3 城市/区县 | 城市 高（文字/车牌/区号/确认锚点）或 **片区 中** | ≥2 线索 + ≥1 条已抄规则 |
+| L4 点位/路名 | **路 高**（实景 ≥2 独有特征）或 **楼 高**（两条独立约束 + 实景 ≥3 项）；有 GPS 直接 L4 | 可核验文本或两条独立约束交会 + 误差半径 |
+
+- 误差半径 ≤100 m 的机位才有资格进 L4。
+- `geo-sleuth` 报「路 高 + 方位自检通过」（无地面照片时）也整体进 L4，但楼级置信度最高只给中。
+- 楼层级不进 L0–L4，L4 到点位为止。
+
+### 资源（必达，节选；完整表见原典）
+
+| 路径 | 何时用 |
+|---|---|
+| `INDEX.md` | 不知进哪个领域 |
+| `geo-sleuth/scripts/sweep.py` | 步骤 3 强制，覆盖率 27/27 |
+| `geo-sleuth/scripts/kb_search.py` | 步骤 3/4 强制，按层报命中数 |
+| `docs/技能互联·产出手册.md` | 步骤 6 出口表 |
+| `region/SKILL.md` + `region/references/_index.md` | 步骤 4 区域层 |
+| `lighting-astronomy/references/影子与太阳·本地计算.md` | 有影子/太阳要算数值 |
+| `lighting-astronomy/ShadowFinder-main/` | 需要全球亮带图验证 |
+| `spatiotemporal-culture/references/全球时空日历.md` | 有人群/节庆/穿戴要推时间 |
+| `phone-attribution/SKILL.md` | 招牌上有固话号码 |
+| `railways/references/铁路时刻与车站坐标.md` | 有站名牌/车次号/车型 |
+| `image-search-mcp/` | 需要 Google Lens 自动识图（可选，未注册） |
+
 ## 强制流程（缺任一步不得报 L2+ 结论）
 
 1. **EXIF**：有原图先读 GPS；有坐标 → L4 结束。无则标「已剥离」并继续，不得据此否定定位。
